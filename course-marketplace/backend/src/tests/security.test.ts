@@ -1,0 +1,4 @@
+import {describe,it,expect} from 'vitest';import {canManageCourse,pageParams,signAccess,verifyAccess,hashToken} from '../services/security.js';
+describe('Доступ к курсам',()=>{it('преподаватель управляет только своим курсом',()=>{expect(canManageCourse('teacher',2,2)).toBe(true);expect(canManageCourse('teacher',2,3)).toBe(false)});it('модератор управляет всеми курсами',()=>expect(canManageCourse('moderator',2,3)).toBe(true));it('студент не редактирует курсы',()=>expect(canManageCourse('student',2,2)).toBe(false));});
+describe('Пагинация',()=>{it('ограничивает лимит',()=>expect(pageParams(2,999)).toMatchObject({page:2,limit:30,offset:30}));it('обрабатывает плохой ввод',()=>expect(pageParams(-3,0).limit).toBe(9));});
+describe('JWT',()=>{it('создаёт и проверяет токен',()=>expect(verifyAccess(signAccess({id:1,role:'student'})).id).toBe(1));it('хэш токена стабилен',()=>expect(hashToken('abc')).toBe(hashToken('abc')));});

@@ -1,0 +1,143 @@
+openapi: 3.0.3
+info:
+  title: CourseHub REST API
+  version: 1.0.0
+  description: Образовательный маркетплейс — MVP
+servers:
+  - url: http://localhost:4000/api
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties: {code: {type: string}, message: {type: string}}
+    Course:
+      type: object
+      properties:
+        id: {type: integer}
+        title: {type: string}
+        description: {type: string}
+        level: {type: string}
+        status: {type: string}
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация студента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name,email,password]
+              properties: {name: {type: string}, email: {type: string}, password: {type: string}}
+      responses: {'201': {description: Пользователь создан}, '409': {description: Email занят}}
+  /auth/login:
+    post:
+      summary: Вход и выдача JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email,password]
+              properties: {email: {type: string}, password: {type: string}}
+      responses: {'200': {description: accessToken, refreshToken, user}, '401': {description: Ошибка входа}}
+  /auth/refresh:
+    post:
+      summary: Обновление JWT
+      responses: {'200': {description: Новая пара токенов}}
+  /auth/logout:
+    post:
+      summary: Выход
+      responses: {'200': {description: Сессия завершена}}
+  /auth/forgot-password:
+    post:
+      summary: Создание ссылки восстановления в логе
+      responses: {'200': {description: Результат}}
+  /auth/reset-password:
+    post:
+      summary: Новый пароль по токену
+      responses: {'200': {description: Пароль изменён}}
+  /auth/me:
+    get: {security: [{bearerAuth: []}], summary: Профиль, responses: {'200': {description: Профиль}}}
+    patch: {security: [{bearerAuth: []}], summary: Редактирование профиля, responses: {'200': {description: Обновлено}}}
+  /auth/change-password:
+    post: {security: [{bearerAuth: []}], summary: Смена пароля, responses: {'200': {description: Пароль изменён}}}
+  /courses/categories:
+    get: {summary: Категории, responses: {'200': {description: Список категорий}}}
+  /courses:
+    get:
+      summary: Каталог с поиском, фильтрами, сортировкой и пагинацией
+      parameters:
+        - {in: query, name: search, schema: {type: string}}
+        - {in: query, name: category, schema: {type: integer}}
+        - {in: query, name: level, schema: {type: string}}
+        - {in: query, name: sort, schema: {type: string}}
+        - {in: query, name: page, schema: {type: integer}}
+      responses: {'200': {description: Список курсов с meta}}
+    post: {security: [{bearerAuth: []}], summary: Создать курс (преподаватель), responses: {'201': {description: Курс создан}}}
+  /courses/mine:
+    get: {security: [{bearerAuth: []}], summary: Курсы преподавателя, responses: {'200': {description: Список}}}
+  /courses/enrolled:
+    get: {security: [{bearerAuth: []}], summary: Мои курсы, responses: {'200': {description: Список}}}
+  /courses/{id}:
+    parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+    get: {summary: Курс и уроки, responses: {'200': {description: Курс}}}
+    patch: {security: [{bearerAuth: []}], summary: Изменить курс, responses: {'200': {description: Обновлён}}}
+    delete: {security: [{bearerAuth: []}], summary: Удалить курс, responses: {'200': {description: Удалён}}}
+  /courses/{id}/submit:
+    post:
+      parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+      security: [{bearerAuth: []}]
+      summary: Отправить курс на модерацию
+      responses: {'200': {description: Ожидает проверки}}
+  /courses/{id}/moderate:
+    patch:
+      parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+      security: [{bearerAuth: []}]
+      summary: Опубликовать или отклонить курс
+      responses: {'200': {description: Модерация завершена}}
+  /courses/{id}/lessons:
+    post:
+      parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+      security: [{bearerAuth: []}]
+      summary: Добавить урок
+      responses: {'201': {description: Урок создан}}
+  /courses/{id}/enroll:
+    post:
+      parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+      security: [{bearerAuth: []}]
+      summary: Записаться на курс
+      responses: {'201': {description: Запись создана}}
+  /courses/{id}/progress:
+    get:
+      parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+      security: [{bearerAuth: []}]
+      summary: Прогресс уроков
+      responses: {'200': {description: Завершённые уроки}}
+  /courses/{id}/reviews:
+    post:
+      parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+      security: [{bearerAuth: []}]
+      summary: Отзыв записавшегося студента
+      responses: {'201': {description: Отзыв сохранён}}
+  /admin/dashboard:
+    get: {security: [{bearerAuth: []}], summary: Показатели и график, responses: {'200': {description: Статистика}}}
+  /admin/users:
+    get: {security: [{bearerAuth: []}], summary: Пользователи (модератор), responses: {'200': {description: Список}}}
+  /admin/users/{id}:
+    patch:
+      parameters: [{in: path, name: id, required: true, schema: {type: integer}}]
+      security: [{bearerAuth: []}]
+      summary: Роль или блокировка пользователя
+      responses: {'200': {description: Обновлено}}
+  /admin/audit:
+    get: {security: [{bearerAuth: []}], summary: Журнал действий, responses: {'200': {description: Аудит}}}
+  /uploads:
+    post: {security: [{bearerAuth: []}], summary: Загрузка JPG/PNG/WEBP/PDF до 5MB, responses: {'201': {description: URL файла}}}

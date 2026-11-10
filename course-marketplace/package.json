@@ -1,0 +1,1 @@
+{"name":"course-marketplace","private":true,"scripts":{"dev":"docker compose up --build","test":"npm --prefix backend test && npm --prefix frontend test -- --run","lint":"npm --prefix backend run lint && npm --prefix frontend run lint"}}
